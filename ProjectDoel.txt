@@ -1,0 +1,33 @@
+1. Basisomgeving
+•	Besturingssysteem: Windows 10/11
+•	XAMPP met:
+o	Apache webserver
+o	PHP (geschikte versie voor de gebruikte CodeIgniter-versie)
+o	Benodigde PHP-extensies, waaronder:
+	mbstring
+	intl
+	openssl
+	json
+	curl
+	pdo
+	sqlsrv / pdo_sqlsrv (voor koppeling met MS SQL)
+•	Composer
+o	Composer geïnstalleerd op de ontwikkelmachine
+o	Gebruik van Composer voor installatie en eventueel beheer van CodeIgniter en benodigde PHP-packages
+2. Database
+•	Microsoft SQL Server (lokaal of via schoolserver)
+•	SQL Server Management Studio (SSMS) voor beheer
+3. CodeIgniter
+•	Werkende CodeIgniter-installatie (bij voorkeur CodeIgniter 4)
+•	Project draait lokaal via XAMPP
+•	Configuratie voor de database-verbinding met MS SQL via de SQLSRV-driver
+4. Tools & versiebeheer
+•	Visual Studio Code als code-editor
+o	Met in ieder geval een PHP-extensie (IntelliSense)
+o	Een debug-extensie voor PHP (Xdebug)
+•	Git voor lokaal versiebeheer:
+o	Lokale repository voor het examenproject
+o	Basisgebruik van commits (met duidelijke berichten)
+5. Debugging
+•	Xdebug geïnstalleerd en geactiveerd in php.ini
+•	Debugconfiguratie in VS Code zodat ik breakpoints kan gebruiken in mijn PHP/CodeIgniter-code
