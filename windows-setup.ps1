@@ -36,7 +36,7 @@ Write-Host "  Development Stack Installer" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 
 # 1. XAMPP installatie
-Write-Host "`n[1/7] XAMPP (Apache + PHP 8.2) installeren..." -ForegroundColor Yellow
+Write-Host "`n[1/6] XAMPP (Apache + PHP 8.2) installeren..." -ForegroundColor Yellow
 $XamppInstaller = "$DownloadPath\xampp-installer.exe"
 $XamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download"
 
@@ -56,7 +56,7 @@ if (-not (Test-Path "C:\xampp")) {
 }
 
 # 2. Composer installatie
-Write-Host "`n[2/7] Composer installeren..." -ForegroundColor Yellow
+Write-Host "`n[2/6] Composer installeren..." -ForegroundColor Yellow
 $ComposerInstaller = "$DownloadPath\composer-setup.exe"
 
 if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
@@ -78,7 +78,7 @@ if (-not (Get-Command composer -ErrorAction SilentlyContinue)) {
 }
 
 # 3. Git installatie
-Write-Host "`n[3/7] Git installeren..." -ForegroundColor Yellow
+Write-Host "`n[3/6] Git installeren..." -ForegroundColor Yellow 
 $GitInstaller = "$DownloadPath\git-installer.exe"
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
@@ -144,8 +144,9 @@ if ($InstallSSMS -eq "j" -or $InstallSSMS -eq "J") {
 }
 #>
 
-# 6. Visual Studio Code installatie
-Write-Host "`n[6/7] Visual Studio Code installeren..." -ForegroundColor Yellow
+# 4. Visual Studio Code installatie
+
+Write-Host "`n[4/6] Visual Studio Code installeren..." -ForegroundColor Yellow
 Write-Host "  Wil je VS Code installeren? (j/n)" -ForegroundColor Cyan
 $InstallVSCode = Read-Host
 
@@ -161,13 +162,51 @@ if ($InstallVSCode -eq "j" -or $InstallVSCode -eq "J") {
         Write-Log "ERROR: VS Code installatie mislukt - $_"
         Write-Host "  Handmatig downloaden van: https://code.visualstudio.com/" -ForegroundColor Red
     }
+
+    # 4a. VS Code extensies installeren
+    # setup-vscode-php.ps1
+    Write-Host "=== VS Code PHP Setup ===" -ForegroundColor Cyan
+    # Zoek VS Code installatie
+    $codePaths = @(
+        "C:\Program Files\Microsoft VS Code\bin\code.cmd",
+        "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd"
+    )
+
+    $codeCmd = $codePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+    if (-not $codeCmd) {
+        Write-Error "VS Code niet gevonden! Installeer eerst VS Code."
+        exit 1
+    }
+
+    Write-Host "VS Code gevonden: $codeCmd" -ForegroundColor Green
+
+    # PHP extensies
+    $extensions = @(
+        "bmewburn.vscode-intelephense-client",
+        "xdebug.php-debug"
+    )
+
+    Write-Host "`nInstalleren van extensies..." -ForegroundColor Yellow
+
+    foreach ($ext in $extensions) {
+        Write-Host "  - $ext" -ForegroundColor Gray
+        & $codeCmd --install-extension $ext --force 2>$null
+    }
+
+    Write-Host "`nGeïnstalleerde PHP extensies:" -ForegroundColor Green
+    & $codeCmd --list-extensions | Select-String "php|intelephense"
+
+    Write-Host "`nKlaar!" -ForegroundColor Cyan
+
 } else {
     Write-Host "  VS Code installatie overgeslagen" -ForegroundColor Yellow
 }
 
 
-# 7. PHP Configuratie en extensies
-Write-Host "`n[7/7] PHP configureren en SQL Server drivers installeren..." -ForegroundColor Yellow
+
+# 5. PHP Configuratie en extensies
+Write-Host "`n[5/6] PHP configureren en SQL Server drivers installeren..." -ForegroundColor Yellow
 
 if (Test-Path "C:\xampp\php") {
     $PhpPath = "C:\xampp\php"
@@ -289,8 +328,8 @@ xdebug.idekey=VSCODE
     Write-Host "  XAMPP niet gevonden - handmatige configuratie vereist" -ForegroundColor Red
 }
 
-# 8. Project setup
-Write-Host "`n[8/8] Project setup..." -ForegroundColor Yellow
+# 6. Project setup
+Write-Host "`n[6/6] Project setup..." -ForegroundColor Yellow
 
 # Kopieer project naar XAMPP htdocs
 $HtdocsPath = "C:\xampp\htdocs\Examen"
