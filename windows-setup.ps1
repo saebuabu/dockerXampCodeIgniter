@@ -97,6 +97,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
 }
 
 # 4. SQL Server Express installatie
+<#
 Write-Host "`n[4/7] SQL Server Express 2022 installeren..." -ForegroundColor Yellow
 Write-Host "  Wil je SQL Server Express lokaal installeren? (j/n)" -ForegroundColor Cyan
 Write-Host "  (Typ 'n' als je de schoolserver gebruikt)" -ForegroundColor Gray
@@ -118,8 +119,10 @@ if ($InstallSQL -eq "j" -or $InstallSQL -eq "J") {
 } else {
     Write-Host "  SQL Server installatie overgeslagen" -ForegroundColor Yellow
 }
+#>
 
 # 5. SQL Server Management Studio
+<#
 Write-Host "`n[5/7] SQL Server Management Studio (SSMS) installeren..." -ForegroundColor Yellow
 Write-Host "  Wil je SSMS installeren? (j/n)" -ForegroundColor Cyan
 $InstallSSMS = Read-Host
@@ -139,8 +142,10 @@ if ($InstallSSMS -eq "j" -or $InstallSSMS -eq "J") {
 } else {
     Write-Host "  SSMS installatie overgeslagen" -ForegroundColor Yellow
 }
+#>
 
 # 6. Visual Studio Code (optioneel)
+<#
 Write-Host "`n[6/7] Visual Studio Code installeren..." -ForegroundColor Yellow
 Write-Host "  Wil je VS Code installeren? (j/n)" -ForegroundColor Cyan
 $InstallVSCode = Read-Host
@@ -150,7 +155,7 @@ if ($InstallVSCode -eq "j" -or $InstallVSCode -eq "J") {
     Write-Log "Download VS Code..."
     try {
         Invoke-WebRequest -Uri "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user" -OutFile $VSCodeInstaller
-        Write-Log "Start VS Code installatie..."
+        Write-Log "Start VS Code installatie..." 
         Start-Process -FilePath $VSCodeInstaller -ArgumentList "/VERYSILENT /MERGETASKS=!runcode" -Wait
         Write-Host "  VS Code geinstalleerd!" -ForegroundColor Green
     } catch {
@@ -160,6 +165,8 @@ if ($InstallVSCode -eq "j" -or $InstallVSCode -eq "J") {
 } else {
     Write-Host "  VS Code installatie overgeslagen" -ForegroundColor Yellow
 }
+#>
+
 
 # 7. PHP Configuratie en extensies
 Write-Host "`n[7/7] PHP configureren en SQL Server drivers installeren..." -ForegroundColor Yellow
@@ -265,10 +272,10 @@ xdebug.idekey=VSCODE
 
 # CodeIgniter Virtual Host
 <VirtualHost *:80>
-    DocumentRoot "C:/xampp/htdocs/ExamenXampDocker/public"
+    DocumentRoot "C:/xampp/htdocs/Examen/public"
     ServerName localhost
 
-    <Directory "C:/xampp/htdocs/ExamenXampDocker/public">
+    <Directory "C:/xampp/htdocs/Examen/public">
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted
@@ -288,7 +295,7 @@ xdebug.idekey=VSCODE
 Write-Host "`n[8/8] Project setup..." -ForegroundColor Yellow
 
 # Kopieer project naar XAMPP htdocs
-$HtdocsPath = "C:\xampp\htdocs\ExamenXampDocker"
+$HtdocsPath = "C:\xampp\htdocs\Examen"
 if (-not (Test-Path $HtdocsPath)) {
     Write-Log "Kopieer project naar XAMPP htdocs..."
     try {
