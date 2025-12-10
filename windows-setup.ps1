@@ -144,8 +144,7 @@ if ($InstallSSMS -eq "j" -or $InstallSSMS -eq "J") {
 }
 #>
 
-# 6. Visual Studio Code (optioneel)
-<#
+# 6. Visual Studio Code installatie
 Write-Host "`n[6/7] Visual Studio Code installeren..." -ForegroundColor Yellow
 Write-Host "  Wil je VS Code installeren? (j/n)" -ForegroundColor Cyan
 $InstallVSCode = Read-Host
@@ -165,7 +164,6 @@ if ($InstallVSCode -eq "j" -or $InstallVSCode -eq "J") {
 } else {
     Write-Host "  VS Code installatie overgeslagen" -ForegroundColor Yellow
 }
-#>
 
 
 # 7. PHP Configuratie en extensies
