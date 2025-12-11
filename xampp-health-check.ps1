@@ -76,6 +76,35 @@ if (Test-Path $HttpdConf) {
     if (Test-Path $ApacheExe) {
         $apacheVersion = & $ApacheExe -v 2>&1 | Select-Object -First 1
         Write-Host "  [OK] $apacheVersion" -ForegroundColor Green
+
+        # Test Apache configuratie syntax
+        $ApacheTest = & $ApacheExe -t 2>&1
+        if ($ApacheTest -match "Syntax OK") {
+            Write-Host "  [OK] Apache configuratie syntax is correct" -ForegroundColor Green
+        } else {
+            Write-Host "  [FAIL] Apache configuratie bevat fouten" -ForegroundColor Red
+            Write-Host "  Run: C:\xampp\apache\bin\httpd.exe -t" -ForegroundColor Gray
+            $AllOK = $false
+        }
+    }
+
+    # Check of Virtual Hosts enabled zijn
+    $HttpdContent = Get-Content $HttpdConf -Raw
+    if ($HttpdContent -match "^\s*Include conf/extra/httpd-vhosts.conf" -and $HttpdContent -notmatch "#.*Include conf/extra/httpd-vhosts.conf") {
+        Write-Host "  [OK] Virtual Hosts zijn enabled" -ForegroundColor Green
+    } else {
+        Write-Host "  [INFO] Virtual Hosts zijn niet enabled (optioneel)" -ForegroundColor Gray
+    }
+
+    # Check Virtual Host configuratie
+    $VHostConf = "C:\xampp\apache\conf\extra\httpd-vhosts.conf"
+    if (Test-Path $VHostConf) {
+        $VHostContent = Get-Content $VHostConf -Raw
+        if ($VHostContent -match "CodeIgniter Virtual Host") {
+            Write-Host "  [OK] CodeIgniter Virtual Host geconfigureerd" -ForegroundColor Green
+        } else {
+            Write-Host "  [INFO] CodeIgniter Virtual Host nog niet geconfigureerd" -ForegroundColor Gray
+        }
     }
 } else {
     Write-Host "  [FAIL] httpd.conf niet gevonden" -ForegroundColor Red
@@ -319,10 +348,13 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host "`nSnelle Acties:" -ForegroundColor Cyan
 Write-Host "  Start XAMPP Control Panel:" -ForegroundColor White
 Write-Host "    C:\xampp\xampp-control.exe" -ForegroundColor Gray
-Write-Host "`n  Open localhost in browser:" -ForegroundColor White
-Write-Host "    http://localhost" -ForegroundColor Gray
+Write-Host "`n  Open in browser:" -ForegroundColor White
+Write-Host "    XAMPP Dashboard: http://localhost" -ForegroundColor Gray
+Write-Host "    CodeIgniter App: http://localhost/Examen/" -ForegroundColor Gray
 Write-Host "`n  Test PHP info:" -ForegroundColor White
 Write-Host "    http://localhost/dashboard/phpinfo.php" -ForegroundColor Gray
+Write-Host "`n  Check Apache error log:" -ForegroundColor White
+Write-Host "    Get-Content C:\xampp\apache\logs\error.log -Tail 50" -ForegroundColor Gray
 Write-Host "`n  View installation log:" -ForegroundColor White
 Write-Host "    Get-Content .\installation-log.txt" -ForegroundColor Gray
 

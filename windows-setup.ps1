@@ -359,16 +359,42 @@ xdebug.idekey=VSCODE
 
     # Configureer Apache voor CodeIgniter
     Write-Log "Configureer Apache voor CodeIgniter..."
-    $ApacheConfPath = "C:\xampp\apache\conf\extra\httpd-vhosts.conf"
 
+    # Check of Virtual Hosts enabled zijn in httpd.conf
+    $HttpdConf = "C:\xampp\apache\conf\httpd.conf"
+    if (Test-Path $HttpdConf) {
+        $HttpdContent = Get-Content $HttpdConf -Raw
+
+        # Enable Virtual Hosts als ze nog niet enabled zijn
+        if ($HttpdContent -match "#.*Include conf/extra/httpd-vhosts.conf") {
+            Write-Host "  Enabling Virtual Hosts in httpd.conf..." -ForegroundColor Gray
+            $HttpdContent = $HttpdContent -replace "#(.*Include conf/extra/httpd-vhosts.conf)", '$1'
+            Set-Content -Path $HttpdConf -Value $HttpdContent
+            Write-Log "Virtual Hosts enabled in httpd.conf"
+        }
+    }
+
+    $ApacheConfPath = "C:\xampp\apache\conf\extra\httpd-vhosts.conf"
     if (Test-Path $ApacheConfPath) {
-        $VHostConfig = @"
+        # Check of onze configuratie al bestaat
+        $VHostContent = Get-Content $ApacheConfPath -Raw
+
+        if ($VHostContent -notmatch "CodeIgniter Virtual Host") {
+            $VHostConfig = @"
 
 # CodeIgniter Virtual Host
 <VirtualHost *:80>
-    DocumentRoot "C:/xampp/htdocs/Examen/public"
+    DocumentRoot "C:/xampp/htdocs"
     ServerName localhost
 
+    <Directory "C:/xampp/htdocs">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # CodeIgniter specifieke alias
+    Alias /Examen "C:/xampp/htdocs/Examen/public"
     <Directory "C:/xampp/htdocs/Examen/public">
         Options Indexes FollowSymLinks
         AllowOverride All
@@ -376,8 +402,12 @@ xdebug.idekey=VSCODE
     </Directory>
 </VirtualHost>
 "@
-        Add-Content -Path $ApacheConfPath -Value $VHostConfig
-        Write-Host "  Apache Virtual Host toegevoegd!" -ForegroundColor Green
+            Add-Content -Path $ApacheConfPath -Value $VHostConfig
+            Write-Host "  Apache Virtual Host toegevoegd!" -ForegroundColor Green
+            Write-Log "Apache Virtual Host configuratie toegevoegd"
+        } else {
+            Write-Host "  Apache Virtual Host al geconfigureerd" -ForegroundColor Gray
+        }
     }
 
 } else {
@@ -498,11 +528,22 @@ Write-Host "=====================================" -ForegroundColor Green
 Write-Host "`nVolgende stappen:" -ForegroundColor Cyan
 Write-Host "1. Start XAMPP Control Panel: C:\xampp\xampp-control.exe" -ForegroundColor White
 Write-Host "2. Start Apache en MySQL services" -ForegroundColor White
-Write-Host "3. Open project in browser: http://localhost/" -ForegroundColor White
-Write-Host "4. Configureer database in: $HtdocsPath\app\Config\Database.php" -ForegroundColor White
+Write-Host "`n3. Open in browser:" -ForegroundColor White
+Write-Host "   - XAMPP Dashboard: http://localhost/" -ForegroundColor Gray
+Write-Host "   - CodeIgniter Project: http://localhost/Examen/" -ForegroundColor Gray
+Write-Host "`n4. Configureer database in: $HtdocsPath\app\Config\Database.php" -ForegroundColor White
 Write-Host "`nVoor VS Code debugging:" -ForegroundColor Cyan
 Write-Host "- Installeer PHP Debug extensie" -ForegroundColor White
 Write-Host "- Configureer launch.json voor Xdebug poort 9003" -ForegroundColor White
+Write-Host "`nTroubleshooting:" -ForegroundColor Cyan
+Write-Host "Als Apache niet start:" -ForegroundColor White
+Write-Host "- Check of poort 80 bezet is: netstat -ano | findstr :80" -ForegroundColor Gray
+Write-Host "- Stop andere webservers (IIS, Skype, etc.)" -ForegroundColor Gray
+Write-Host "- Check Apache error log: C:\xampp\apache\logs\error.log" -ForegroundColor Gray
+Write-Host "`nAls localhost niets toont:" -ForegroundColor White
+Write-Host "- Check of Apache draait in XAMPP Control Panel" -ForegroundColor Gray
+Write-Host "- Run health check: .\xampp-health-check.ps1" -ForegroundColor Gray
+Write-Host "- Check Apache configuratie: C:\xampp\apache\conf\extra\httpd-vhosts.conf" -ForegroundColor Gray
 Write-Host "`nLog bestand: $LogFile" -ForegroundColor Gray
 Write-Host "`nDruk op een toets om af te sluiten..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
