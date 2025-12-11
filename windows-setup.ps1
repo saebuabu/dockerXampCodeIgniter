@@ -4,7 +4,7 @@
 
 # Configuratie
 $ProjectRoot = $PSScriptRoot
-$DownloadPath = "$env:TEMP\DevStackDownloads"
+$DownloadPath = "C:\DevStackDownloads"
 $LogFile = "$ProjectRoot\installation-log.txt"
 
 # Functies
@@ -19,6 +19,22 @@ function Test-Administrator {
     return $currentUser.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
+function Test-DiskSpace {
+    param(
+        [string]$Drive = "C:",
+        [int]$RequiredGB = 5
+    )
+    $disk = Get-PSDrive -Name $Drive.TrimEnd(':')
+    $freeSpaceGB = [math]::Round($disk.Free / 1GB, 2)
+
+    if ($freeSpaceGB -lt $RequiredGB) {
+        Write-Host "  WARNING: Onvoldoende schijfruimte op drive $Drive" -ForegroundColor Red
+        Write-Host "  Beschikbaar: $freeSpaceGB GB - Vereist: $RequiredGB GB" -ForegroundColor Yellow
+        return $false
+    }
+    return $true
+}
+
 # Check Administrator rechten
 if (-not (Test-Administrator)) {
     Write-Host "ERROR: Dit script moet als Administrator worden uitgevoerd!" -ForegroundColor Red
@@ -27,13 +43,30 @@ if (-not (Test-Administrator)) {
     exit 1
 }
 
-# Maak download directory
-New-Item -ItemType Directory -Force -Path $DownloadPath | Out-Null
-
 Write-Log "=== Start installatie Development Stack ==="
 Write-Host "`n=====================================" -ForegroundColor Cyan
 Write-Host "  Development Stack Installer" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
+
+# Check schijfruimte
+Write-Host "`nControleren systeem vereisten..." -ForegroundColor Gray
+if (-not (Test-DiskSpace -Drive "C:" -RequiredGB 5)) {
+    Write-Host "`nWARNING: Onvoldoende schijfruimte. Minimaal 5GB vrij nodig." -ForegroundColor Red
+    Write-Host "Wil je toch doorgaan? (j/n)" -ForegroundColor Yellow
+    $Continue = Read-Host
+    if ($Continue -ne "j" -and $Continue -ne "J") {
+        Write-Host "Installatie geannuleerd." -ForegroundColor Yellow
+        exit 1
+    }
+} else {
+    $disk = Get-PSDrive -Name C
+    $freeSpaceGB = [math]::Round($disk.Free / 1GB, 2)
+    Write-Host "  Schijfruimte OK: $freeSpaceGB GB beschikbaar" -ForegroundColor Green
+}
+
+# Maak download directory
+New-Item -ItemType Directory -Force -Path $DownloadPath | Out-Null
+Write-Log "Download directory: $DownloadPath"
 
 # 1. XAMPP installatie
 Write-Host "`n[1/6] XAMPP (Apache + PHP 8.2) installeren..." -ForegroundColor Yellow
@@ -42,14 +75,59 @@ $XamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12
 
 if (-not (Test-Path "C:\xampp")) {
     Write-Log "Download XAMPP..."
+    Write-Host "  Downloaden... (Dit kan enkele minuten duren)" -ForegroundColor Gray
+
+    # Verwijder oude installer als die bestaat
+    if (Test-Path $XamppInstaller) {
+        Remove-Item $XamppInstaller -Force
+    }
+
     try {
+        # Download met progress indicator
+        $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest -Uri $XamppUrl -OutFile $XamppInstaller -UseBasicParsing
+        $ProgressPreference = 'Continue'
+
+        # Verificeer download
+        if (-not (Test-Path $XamppInstaller)) {
+            throw "Download bestand niet gevonden"
+        }
+
+        $FileSize = (Get-Item $XamppInstaller).Length
+        Write-Log "XAMPP installer gedownload: $([math]::Round($FileSize/1MB, 2)) MB"
+
+        # Minimale grootte check (XAMPP installer is ~150MB)
+        if ($FileSize -lt 100MB) {
+            throw "Download lijkt incompleet (bestand te klein: $([math]::Round($FileSize/1MB, 2)) MB)"
+        }
+
+        Write-Host "  Download geslaagd! ($([math]::Round($FileSize/1MB, 2)) MB)" -ForegroundColor Green
         Write-Log "Start XAMPP installatie..."
+        Write-Host "  Installeren... (Dit kan 5-10 minuten duren, even geduld)" -ForegroundColor Gray
+
         Start-Process -FilePath $XamppInstaller -ArgumentList "--mode unattended --launchapps 0" -Wait
-        Write-Host "  XAMPP geinstalleerd!" -ForegroundColor Green
+
+        # Verificeer installatie
+        if (Test-Path "C:\xampp") {
+            Write-Host "  XAMPP succesvol geinstalleerd!" -ForegroundColor Green
+            Write-Log "XAMPP installatie geslaagd"
+        } else {
+            throw "XAMPP directory niet aangemaakt na installatie"
+        }
+
     } catch {
         Write-Log "ERROR: XAMPP installatie mislukt - $_"
-        Write-Host "  Handmatig downloaden van: https://www.apachefriends.org/" -ForegroundColor Red
+        Write-Host "`n  ERROR: XAMPP installatie mislukt!" -ForegroundColor Red
+        Write-Host "  Reden: $_" -ForegroundColor Red
+        Write-Host "`n  Mogelijke oplossingen:" -ForegroundColor Yellow
+        Write-Host "  1. Controleer of je voldoende schijfruimte hebt (minimaal 2GB)" -ForegroundColor White
+        Write-Host "  2. Schakel tijdelijk je antivirus uit" -ForegroundColor White
+        Write-Host "  3. Download handmatig van: https://www.apachefriends.org/" -ForegroundColor White
+        Write-Host "     - Kies versie 8.2.12" -ForegroundColor Gray
+        Write-Host "     - Installeer naar C:\xampp" -ForegroundColor Gray
+        Write-Host "  4. Check de log file voor details: $LogFile" -ForegroundColor White
+        Write-Host "`n  Druk op een toets om door te gaan met de rest van de installatie..." -ForegroundColor Cyan
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     }
 } else {
     Write-Host "  XAMPP is al geinstalleerd" -ForegroundColor Green

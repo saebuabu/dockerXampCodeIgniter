@@ -229,6 +229,55 @@ Maak `.vscode/launch.json` in je project:
 
 ## Veelvoorkomende Problemen
 
+### XAMPP installatie mislukt (corrupted file error)
+
+**Probleem**: "The file or directory is corrupted and unreadable"
+
+**Mogelijke oorzaken**:
+- Download is niet volledig of corrupt
+- Onvoldoende schijfruimte
+- Antivirus software heeft het bestand geblokkeerd
+- Problemen met Windows TEMP directory
+
+**Oplossingen**:
+
+1. **Handmatige download en installatie** (aanbevolen):
+   ```powershell
+   # Maak een download directory
+   New-Item -Path "C:\DevStackDownloads" -ItemType Directory -Force
+
+   # Open de download locatie in je browser
+   Start-Process "https://www.apachefriends.org/download.html"
+   ```
+   - Download XAMPP 8.2.x (Windows versie, 64-bit)
+   - Sla op in `C:\DevStackDownloads`
+   - Rechtermuisknop op het bestand → "Run as Administrator"
+   - Installeer naar `C:\xampp`
+
+2. **Script opnieuw uitvoeren**:
+   - Het script gebruikt nu `C:\DevStackDownloads` in plaats van de TEMP directory
+   - Verwijder oude downloads eerst:
+     ```powershell
+     Remove-Item "C:\DevStackDownloads\*.exe" -Force
+     ```
+   - Run het script opnieuw als Administrator
+
+3. **Antivirus tijdelijk uitschakelen**:
+   - Windows Defender of andere antivirus kan de download blokkeren
+   - Schakel tijdelijk uit tijdens de installatie
+   - Vergeet niet om het daarna weer in te schakelen!
+
+4. **Schijfruimte controleren**:
+   ```powershell
+   Get-PSDrive C | Select-Object Used,Free
+   ```
+   - Zorg voor minimaal 5GB vrije ruimte op C:
+
+5. **Als alle andere opties falen**:
+   - Download portable versie van XAMPP
+   - Extract naar `C:\xampp`
+   - Skip de installer stap
+
 ### Apache start niet
 
 **Probleem**: Poort 80 is al in gebruik
