@@ -357,59 +357,6 @@ xdebug.idekey=VSCODE
     Set-Content -Path $PhpIniPath -Value $PhpIniContent
     Write-Host "  PHP.ini geconfigureerd!" -ForegroundColor Green
 
-    # Configureer Apache voor CodeIgniter
-    Write-Log "Configureer Apache voor CodeIgniter..."
-
-    # Check of Virtual Hosts enabled zijn in httpd.conf
-    $HttpdConf = "C:\xampp\apache\conf\httpd.conf"
-    if (Test-Path $HttpdConf) {
-        $HttpdContent = Get-Content $HttpdConf -Raw
-
-        # Enable Virtual Hosts als ze nog niet enabled zijn
-        if ($HttpdContent -match "#.*Include conf/extra/httpd-vhosts.conf") {
-            Write-Host "  Enabling Virtual Hosts in httpd.conf..." -ForegroundColor Gray
-            $HttpdContent = $HttpdContent -replace "#(.*Include conf/extra/httpd-vhosts.conf)", '$1'
-            Set-Content -Path $HttpdConf -Value $HttpdContent
-            Write-Log "Virtual Hosts enabled in httpd.conf"
-        }
-    }
-
-    $ApacheConfPath = "C:\xampp\apache\conf\extra\httpd-vhosts.conf"
-    if (Test-Path $ApacheConfPath) {
-        # Check of onze configuratie al bestaat
-        $VHostContent = Get-Content $ApacheConfPath -Raw
-
-        if ($VHostContent -notmatch "CodeIgniter Virtual Host") {
-            $VHostConfig = @"
-
-# CodeIgniter Virtual Host
-<VirtualHost *:80>
-    DocumentRoot "C:/xampp/htdocs"
-    ServerName localhost
-
-    <Directory "C:/xampp/htdocs">
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    # CodeIgniter specifieke alias
-    Alias /Examen "C:/xampp/htdocs/Examen/public"
-    <Directory "C:/xampp/htdocs/Examen/public">
-        Options Indexes FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-</VirtualHost>
-"@
-            Add-Content -Path $ApacheConfPath -Value $VHostConfig
-            Write-Host "  Apache Virtual Host toegevoegd!" -ForegroundColor Green
-            Write-Log "Apache Virtual Host configuratie toegevoegd"
-        } else {
-            Write-Host "  Apache Virtual Host al geconfigureerd" -ForegroundColor Gray
-        }
-    }
-
 } else {
     Write-Log "WARNING: XAMPP PHP directory niet gevonden"
     Write-Host "  XAMPP niet gevonden - handmatige configuratie vereist" -ForegroundColor Red
@@ -498,6 +445,64 @@ foreach ($dir in $WritableDirs) {
     if (-not (Test-Path $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }
+}
+
+# Configureer Apache voor CodeIgniter (NA het kopiëren van het project)
+if ((Test-Path "C:\xampp") -and (Test-Path "$HtdocsPath\public")) {
+    Write-Host "`nConfigureren Apache voor CodeIgniter..." -ForegroundColor Yellow
+    Write-Log "Configureer Apache voor CodeIgniter..."
+
+    # Check of Virtual Hosts enabled zijn in httpd.conf
+    $HttpdConf = "C:\xampp\apache\conf\httpd.conf"
+    if (Test-Path $HttpdConf) {
+        $HttpdContent = Get-Content $HttpdConf -Raw
+
+        # Enable Virtual Hosts als ze nog niet enabled zijn
+        if ($HttpdContent -match "#.*Include conf/extra/httpd-vhosts.conf") {
+            Write-Host "  Enabling Virtual Hosts in httpd.conf..." -ForegroundColor Gray
+            $HttpdContent = $HttpdContent -replace "#(.*Include conf/extra/httpd-vhosts.conf)", '$1'
+            Set-Content -Path $HttpdConf -Value $HttpdContent
+            Write-Log "Virtual Hosts enabled in httpd.conf"
+        }
+    }
+
+    $ApacheConfPath = "C:\xampp\apache\conf\extra\httpd-vhosts.conf"
+    if (Test-Path $ApacheConfPath) {
+        # Check of onze configuratie al bestaat
+        $VHostContent = Get-Content $ApacheConfPath -Raw
+
+        if ($VHostContent -notmatch "CodeIgniter Virtual Host") {
+            $VHostConfig = @"
+
+# CodeIgniter Virtual Host
+<VirtualHost *:80>
+    DocumentRoot "C:/xampp/htdocs"
+    ServerName localhost
+
+    <Directory "C:/xampp/htdocs">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # CodeIgniter specifieke alias
+    Alias /Examen "C:/xampp/htdocs/Examen/public"
+    <Directory "C:/xampp/htdocs/Examen/public">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+"@
+            Add-Content -Path $ApacheConfPath -Value $VHostConfig
+            Write-Host "  Apache Virtual Host toegevoegd!" -ForegroundColor Green
+            Write-Log "Apache Virtual Host configuratie toegevoegd"
+        } else {
+            Write-Host "  Apache Virtual Host al geconfigureerd" -ForegroundColor Gray
+        }
+    }
+} else {
+    Write-Host "`nApache configuratie overgeslagen (project niet compleet)" -ForegroundColor Yellow
 }
 
 # Download Microsoft ODBC Driver voor SQL Server
