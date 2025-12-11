@@ -68,69 +68,48 @@ if (-not (Test-DiskSpace -Drive "C:" -RequiredGB 5)) {
 New-Item -ItemType Directory -Force -Path $DownloadPath | Out-Null
 Write-Log "Download directory: $DownloadPath"
 
-# 1. XAMPP installatie
-Write-Host "`n[1/6] XAMPP (Apache + PHP 8.2) installeren..." -ForegroundColor Yellow
-$XamppInstaller = "$DownloadPath\xampp-installer.exe"
-$XamppUrl = "https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/xampp-windows-x64-8.2.12-0-VS16-installer.exe/download"
+# 1. XAMPP handmatige installatie vereist
+Write-Host "`n[1/6] XAMPP (Apache + PHP 8.2) - Handmatige installatie vereist" -ForegroundColor Yellow
+Write-Log "XAMPP handmatige installatie check"
 
 if (-not (Test-Path "C:\xampp")) {
-    Write-Log "Download XAMPP..."
-    Write-Host "  Downloaden... (Dit kan enkele minuten duren)" -ForegroundColor Gray
-
-    # Verwijder oude installer als die bestaat
-    if (Test-Path $XamppInstaller) {
-        Remove-Item $XamppInstaller -Force
-    }
-
-    try {
-        # Download met progress indicator
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri $XamppUrl -OutFile $XamppInstaller -UseBasicParsing
-        $ProgressPreference = 'Continue'
-
-        # Verificeer download
-        if (-not (Test-Path $XamppInstaller)) {
-            throw "Download bestand niet gevonden"
-        }
-
-        $FileSize = (Get-Item $XamppInstaller).Length
-        Write-Log "XAMPP installer gedownload: $([math]::Round($FileSize/1MB, 2)) MB"
-
-        # Minimale grootte check (XAMPP installer is ~150MB)
-        if ($FileSize -lt 100MB) {
-            throw "Download lijkt incompleet (bestand te klein: $([math]::Round($FileSize/1MB, 2)) MB)"
-        }
-
-        Write-Host "  Download geslaagd! ($([math]::Round($FileSize/1MB, 2)) MB)" -ForegroundColor Green
-        Write-Log "Start XAMPP installatie..."
-        Write-Host "  Installeren... (Dit kan 5-10 minuten duren, even geduld)" -ForegroundColor Gray
-
-        Start-Process -FilePath $XamppInstaller -ArgumentList "--mode unattended --launchapps 0" -Wait
-
-        # Verificeer installatie
-        if (Test-Path "C:\xampp") {
-            Write-Host "  XAMPP succesvol geinstalleerd!" -ForegroundColor Green
-            Write-Log "XAMPP installatie geslaagd"
-        } else {
-            throw "XAMPP directory niet aangemaakt na installatie"
-        }
-
-    } catch {
-        Write-Log "ERROR: XAMPP installatie mislukt - $_"
-        Write-Host "`n  ERROR: XAMPP installatie mislukt!" -ForegroundColor Red
-        Write-Host "  Reden: $_" -ForegroundColor Red
-        Write-Host "`n  Mogelijke oplossingen:" -ForegroundColor Yellow
-        Write-Host "  1. Controleer of je voldoende schijfruimte hebt (minimaal 2GB)" -ForegroundColor White
-        Write-Host "  2. Schakel tijdelijk je antivirus uit" -ForegroundColor White
-        Write-Host "  3. Download handmatig van: https://www.apachefriends.org/" -ForegroundColor White
-        Write-Host "     - Kies versie 8.2.12" -ForegroundColor Gray
-        Write-Host "     - Installeer naar C:\xampp" -ForegroundColor Gray
-        Write-Host "  4. Check de log file voor details: $LogFile" -ForegroundColor White
-        Write-Host "`n  Druk op een toets om door te gaan met de rest van de installatie..." -ForegroundColor Cyan
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    }
+    Write-Host "`n  BELANGRIJK: XAMPP moet handmatig worden geinstalleerd!" -ForegroundColor Red
+    Write-Host "`n  Installatie instructies:" -ForegroundColor Cyan
+    Write-Host "  1. Download XAMPP van: https://www.apachefriends.org/" -ForegroundColor White
+    Write-Host "     - Kies versie 8.2.12 voor Windows" -ForegroundColor Gray
+    Write-Host "     - Download link: https://sourceforge.net/projects/xampp/files/XAMPP%20Windows/8.2.12/" -ForegroundColor Gray
+    Write-Host "`n  2. Voer het gedownloade bestand uit" -ForegroundColor White
+    Write-Host "     - Installeer naar C:\xampp (standaard locatie)" -ForegroundColor Gray
+    Write-Host "     - Accepteer de standaard instellingen" -ForegroundColor Gray
+    Write-Host "`n  3. Start dit script opnieuw nadat XAMPP is geinstalleerd" -ForegroundColor White
+    Write-Host "`n=====================================" -ForegroundColor Red
+    Write-Host "  XAMPP NIET GEVONDEN" -ForegroundColor Red
+    Write-Host "=====================================" -ForegroundColor Red
+    Write-Host "`nInstalleer eerst XAMPP voordat je verder gaat!" -ForegroundColor Yellow
+    Write-Host "Druk op een toets om het script af te sluiten..." -ForegroundColor Cyan
+    Write-Log "XAMPP niet gevonden - handmatige installatie vereist"
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    exit 1
 } else {
-    Write-Host "  XAMPP is al geinstalleerd" -ForegroundColor Green
+    Write-Host "  XAMPP is gevonden in C:\xampp" -ForegroundColor Green
+    Write-Log "XAMPP installatie gedetecteerd"
+
+    # Verificeer of essentiële onderdelen aanwezig zijn
+    $XamppComponents = @("apache", "php", "mysql")
+    $MissingComponents = @()
+
+    foreach ($component in $XamppComponents) {
+        if (-not (Test-Path "C:\xampp\$component")) {
+            $MissingComponents += $component
+        }
+    }
+
+    if ($MissingComponents.Count -gt 0) {
+        Write-Host "  WAARSCHUWING: Ontbrekende XAMPP componenten: $($MissingComponents -join ', ')" -ForegroundColor Yellow
+        Write-Log "WARNING: Ontbrekende XAMPP componenten: $($MissingComponents -join ', ')"
+    } else {
+        Write-Host "  Alle XAMPP componenten aanwezig" -ForegroundColor Green
+    }
 }
 
 # 2. Composer installatie
@@ -406,31 +385,81 @@ xdebug.idekey=VSCODE
     Write-Host "  XAMPP niet gevonden - handmatige configuratie vereist" -ForegroundColor Red
 }
 
-# 6. Project setup
-Write-Host "`n[6/6] Project setup..." -ForegroundColor Yellow
+# 6. CodeIgniter 4 Project setup
+Write-Host "`n[6/6] CodeIgniter 4 Project setup..." -ForegroundColor Yellow
 
-# Kopieer project naar XAMPP htdocs
+# Check of project al bestaat
 $HtdocsPath = "C:\xampp\htdocs\Examen"
+
 if (-not (Test-Path $HtdocsPath)) {
-    Write-Log "Kopieer project naar XAMPP htdocs..."
-    try {
-        Copy-Item -Path $ProjectRoot -Destination "C:\xampp\htdocs\" -Recurse -Force
-        Write-Host "  Project gekopieerd naar $HtdocsPath" -ForegroundColor Green
-    } catch {
-        Write-Log "ERROR: Project kopieren mislukt - $_"
+    Write-Log "Setup CodeIgniter 4 project..."
+
+    # Optie 1: Kopieer bestaand project als het bestaat in project root
+    if ((Test-Path "$ProjectRoot\app") -and (Test-Path "$ProjectRoot\composer.json")) {
+        Write-Host "  Bestaand CodeIgniter project gevonden, kopieren..." -ForegroundColor Gray
+        try {
+            Copy-Item -Path $ProjectRoot -Destination "C:\xampp\htdocs\" -Recurse -Force
+            # Hernoem naar Examen
+            if (Test-Path "C:\xampp\htdocs\ExamenXampDocker") {
+                Rename-Item "C:\xampp\htdocs\ExamenXampDocker" "Examen"
+            }
+            Write-Host "  Project gekopieerd naar $HtdocsPath" -ForegroundColor Green
+            Write-Log "Bestaand project gekopieerd"
+        } catch {
+            Write-Log "ERROR: Project kopieren mislukt - $_"
+            Write-Host "  ERROR: Kopieren mislukt - $_" -ForegroundColor Red
+        }
+    } else {
+        # Optie 2: Maak nieuw CodeIgniter project via Composer
+        Write-Host "  Nieuw CodeIgniter 4 project aanmaken..." -ForegroundColor Gray
+        try {
+            Set-Location "C:\xampp\htdocs"
+            & composer create-project codeigniter4/appstarter Examen
+            Write-Host "  Nieuw CodeIgniter project aangemaakt!" -ForegroundColor Green
+            Write-Log "Nieuw CodeIgniter project aangemaakt via Composer"
+        } catch {
+            Write-Log "ERROR: CodeIgniter project aanmaken mislukt - $_"
+            Write-Host "  ERROR: Project aanmaken mislukt - $_" -ForegroundColor Red
+        }
     }
 }
 
-# Installeer Composer dependencies
+# Installeer/Update Composer dependencies
 if (Test-Path "$HtdocsPath\composer.json") {
     Write-Log "Installeer Composer dependencies..."
     Set-Location $HtdocsPath
     try {
-        & composer install
+        if (Test-Path "$HtdocsPath\vendor") {
+            Write-Host "  Composer dependencies updaten..." -ForegroundColor Gray
+            & composer update
+        } else {
+            Write-Host "  Composer dependencies installeren..." -ForegroundColor Gray
+            & composer install
+        }
         Write-Host "  Composer dependencies geinstalleerd!" -ForegroundColor Green
+        Write-Log "Composer dependencies geinstalleerd"
     } catch {
         Write-Log "ERROR: Composer install mislukt - $_"
+        Write-Host "  ERROR: Composer install mislukt - $_" -ForegroundColor Red
     }
+} else {
+    Write-Host "  WARNING: Geen composer.json gevonden in $HtdocsPath" -ForegroundColor Yellow
+}
+
+# Verificeer CodeIgniter installatie
+if (Test-Path "$HtdocsPath\spark") {
+    Write-Host "  CodeIgniter CLI (spark) gevonden" -ForegroundColor Green
+
+    # Test spark command
+    try {
+        $SparkVersion = & php "$HtdocsPath\spark" --version 2>&1 | Select-Object -First 1
+        Write-Host "  $SparkVersion" -ForegroundColor Green
+        Write-Log "CodeIgniter versie: $SparkVersion"
+    } catch {
+        Write-Host "  WARNING: Kon spark niet uitvoeren" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  WARNING: CodeIgniter spark CLI niet gevonden" -ForegroundColor Yellow
 }
 
 # Maak writable directories

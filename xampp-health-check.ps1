@@ -185,34 +185,99 @@ if ($ComposerCmd) {
     Write-Host "  Probeer: composer install in project directory" -ForegroundColor Gray
 }
 
-# 10. Project Setup
-Write-Host "`n[10/10] Project Setup..." -ForegroundColor Yellow
+# 10. CodeIgniter 4 Project Setup
+Write-Host "`n[10/10] CodeIgniter 4 Project..." -ForegroundColor Yellow
 $ProjectPath = "C:\xampp\htdocs\Examen"
 if (Test-Path $ProjectPath) {
     Write-Host "  [OK] Project gevonden in $ProjectPath" -ForegroundColor Green
 
-    # Check belangrijke directories
-    if (Test-Path "$ProjectPath\app") {
-        Write-Host "  [OK] app directory gevonden" -ForegroundColor Green
-    }
-
-    if (Test-Path "$ProjectPath\public") {
-        Write-Host "  [OK] public directory gevonden" -ForegroundColor Green
-    }
-
-    if (Test-Path "$ProjectPath\writable") {
-        Write-Host "  [OK] writable directory gevonden" -ForegroundColor Green
+    # Check CodeIgniter directories
+    $CIDirectories = @("app", "public", "writable", "app\Config", "app\Controllers", "app\Models", "app\Views")
+    foreach ($dir in $CIDirectories) {
+        if (Test-Path "$ProjectPath\$dir") {
+            Write-Host "  [OK] $dir directory gevonden" -ForegroundColor Green
+        } else {
+            Write-Host "  [FAIL] $dir directory niet gevonden" -ForegroundColor Red
+            $AllOK = $false
+        }
     }
 
     # Check composer dependencies
     if (Test-Path "$ProjectPath\vendor") {
         Write-Host "  [OK] Composer dependencies geïnstalleerd" -ForegroundColor Green
+
+        # Check CodeIgniter framework
+        if (Test-Path "$ProjectPath\vendor\codeigniter4\framework") {
+            Write-Host "  [OK] CodeIgniter 4 framework gevonden" -ForegroundColor Green
+        } else {
+            Write-Host "  [FAIL] CodeIgniter 4 framework niet gevonden" -ForegroundColor Red
+            $AllOK = $false
+        }
     } else {
         Write-Host "  [WARN] Vendor directory niet gevonden" -ForegroundColor Yellow
         Write-Host "  Run: composer install in $ProjectPath" -ForegroundColor Gray
     }
+
+    # Check CodeIgniter CLI (spark)
+    if (Test-Path "$ProjectPath\spark") {
+        Write-Host "  [OK] CodeIgniter CLI (spark) gevonden" -ForegroundColor Green
+
+        # Test spark command
+        Set-Location $ProjectPath
+        $SparkTest = & $PhpExe spark --version 2>&1
+        if ($SparkTest) {
+            $SparkVersion = $SparkTest | Select-Object -First 1
+            Write-Host "  [OK] $SparkVersion" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "  [FAIL] spark CLI niet gevonden" -ForegroundColor Red
+        $AllOK = $false
+    }
+
+    # Check env file
+    if (Test-Path "$ProjectPath\env") {
+        Write-Host "  [INFO] env template file gevonden" -ForegroundColor Gray
+        if (-not (Test-Path "$ProjectPath\.env")) {
+            Write-Host "  [WARN] .env file niet gevonden (kopieer van env)" -ForegroundColor Yellow
+            Write-Host "  Run: copy env .env in $ProjectPath" -ForegroundColor Gray
+        } else {
+            Write-Host "  [OK] .env configuratie file gevonden" -ForegroundColor Green
+        }
+    }
+
+    # Check writable permissions
+    $WritableDirs = @("writable\cache", "writable\logs", "writable\session", "writable\uploads")
+    $PermissionIssues = $false
+    foreach ($dir in $WritableDirs) {
+        $fullPath = "$ProjectPath\$dir"
+        if (Test-Path $fullPath) {
+            try {
+                $testFile = "$fullPath\test-write-$(Get-Date -Format 'yyyyMMddHHmmss').tmp"
+                "test" | Out-File -FilePath $testFile -ErrorAction Stop
+                Remove-Item $testFile -ErrorAction SilentlyContinue
+            } catch {
+                Write-Host "  [WARN] $dir niet schrijfbaar" -ForegroundColor Yellow
+                $PermissionIssues = $true
+            }
+        }
+    }
+    if (-not $PermissionIssues) {
+        Write-Host "  [OK] Writable directories zijn schrijfbaar" -ForegroundColor Green
+    }
+
+    # Check key CodeIgniter files
+    $KeyFiles = @("app\Config\App.php", "app\Config\Database.php", "app\Controllers\Home.php")
+    foreach ($file in $KeyFiles) {
+        if (Test-Path "$ProjectPath\$file") {
+            Write-Host "  [OK] $file gevonden" -ForegroundColor Green
+        } else {
+            Write-Host "  [FAIL] $file niet gevonden" -ForegroundColor Red
+            $AllOK = $false
+        }
+    }
+
 } else {
-    Write-Host "  [INFO] Project nog niet gekopieerd naar htdocs" -ForegroundColor Gray
+    Write-Host "  [INFO] CodeIgniter project nog niet geïnstalleerd" -ForegroundColor Gray
     Write-Host "  Run: .\windows-setup.ps1" -ForegroundColor Gray
 }
 
@@ -224,6 +289,14 @@ if ($ApacheProcess) {
         if ($Response.StatusCode -eq 200) {
             Write-Host "  [OK] Apache reageert op http://localhost" -ForegroundColor Green
             Write-Host "  [OK] Status Code: $($Response.StatusCode)" -ForegroundColor Green
+
+            # Check of het een CodeIgniter response is
+            if ($Response.Content -match "CodeIgniter" -or $Response.Content -match "Welcome to CodeIgniter") {
+                Write-Host "  [OK] CodeIgniter welkomstpagina wordt getoond" -ForegroundColor Green
+            } elseif ($Response.Content -match "XAMPP") {
+                Write-Host "  [INFO] XAMPP dashboard wordt getoond (geen CodeIgniter)" -ForegroundColor Gray
+                Write-Host "  Check Apache Virtual Host configuratie" -ForegroundColor Gray
+            }
         }
     } catch {
         Write-Host "  [WARN] Kon geen verbinding maken met http://localhost" -ForegroundColor Yellow
@@ -252,5 +325,19 @@ Write-Host "`n  Test PHP info:" -ForegroundColor White
 Write-Host "    http://localhost/dashboard/phpinfo.php" -ForegroundColor Gray
 Write-Host "`n  View installation log:" -ForegroundColor White
 Write-Host "    Get-Content .\installation-log.txt" -ForegroundColor Gray
+
+if (Test-Path "C:\xampp\htdocs\Examen") {
+    Write-Host "`nCodeIgniter Commands:" -ForegroundColor Cyan
+    Write-Host "  Start development server:" -ForegroundColor White
+    Write-Host "    cd C:\xampp\htdocs\Examen && php spark serve" -ForegroundColor Gray
+    Write-Host "`n  List all routes:" -ForegroundColor White
+    Write-Host "    cd C:\xampp\htdocs\Examen && php spark routes" -ForegroundColor Gray
+    Write-Host "`n  Create migration:" -ForegroundColor White
+    Write-Host "    cd C:\xampp\htdocs\Examen && php spark make:migration <name>" -ForegroundColor Gray
+    Write-Host "`n  Create controller:" -ForegroundColor White
+    Write-Host "    cd C:\xampp\htdocs\Examen && php spark make:controller <name>" -ForegroundColor Gray
+    Write-Host "`n  Create model:" -ForegroundColor White
+    Write-Host "    cd C:\xampp\htdocs\Examen && php spark make:model <name>" -ForegroundColor Gray
+}
 
 Write-Host "`n"
