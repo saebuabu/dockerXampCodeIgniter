@@ -47,9 +47,53 @@ if ((Test-Path "$ProjectRoot\app") -and (Test-Path "$ProjectRoot\public")) {
     }
 
 } else {
-    Write-Host "  [FAIL] CodeIgniter project niet gevonden in: $ProjectRoot" -ForegroundColor Red
-    Write-Host "`n  Zorg dat je dit script runt vanuit de project directory die app/ en public/ bevat" -ForegroundColor Yellow
-    exit 1
+    Write-Host "  [WARN] CodeIgniter project niet gevonden in huidige directory" -ForegroundColor Yellow
+    Write-Host "  Huidige directory: $ProjectRoot" -ForegroundColor Gray
+
+    # Kijk of Composer beschikbaar is
+    $ComposerCmd = Get-Command composer -ErrorAction SilentlyContinue
+    if (-not $ComposerCmd) {
+        Write-Host "`n  [FAIL] Composer niet gevonden - kan geen nieuw project aanmaken" -ForegroundColor Red
+        Write-Host "`n  Opties:" -ForegroundColor Yellow
+        Write-Host "  1. Run dit script vanuit de directory waar je CodeIgniter project staat" -ForegroundColor White
+        Write-Host "  2. Clone het project: git clone <repo-url> C:\xampp\htdocs\Examen" -ForegroundColor White
+        Write-Host "  3. Installeer Composer en run dit script opnieuw" -ForegroundColor White
+        pause
+        exit 1
+    }
+
+    Write-Host "`n  Wil je een NIEUW CodeIgniter 4 project aanmaken? (j/n)" -ForegroundColor Cyan
+    $CreateNew = Read-Host
+
+    if ($CreateNew -eq "j" -or $CreateNew -eq "J") {
+        Write-Host "`n[2/3] Nieuw CodeIgniter project aanmaken..." -ForegroundColor Yellow
+
+        # Verwijder oude incomplete installatie
+        if (Test-Path $HtdocsPath) {
+            Write-Host "  Verwijderen oude installatie..." -ForegroundColor Gray
+            Remove-Item $HtdocsPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        try {
+            Set-Location "C:\xampp\htdocs"
+            Write-Host "  Composer create-project uitvoeren (dit kan even duren)..." -ForegroundColor Gray
+            & composer create-project codeigniter4/appstarter Examen
+
+            if ((Test-Path "$HtdocsPath\app") -and (Test-Path "$HtdocsPath\public")) {
+                Write-Host "  [OK] Nieuw CodeIgniter project aangemaakt!" -ForegroundColor Green
+            } else {
+                throw "Project aangemaakt maar directories ontbreken"
+            }
+        } catch {
+            Write-Host "  [FAIL] Project aanmaken mislukt: $_" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "`n  [INFO] Geannuleerd door gebruiker" -ForegroundColor Gray
+        Write-Host "`n  Clone eerst je project of run dit script vanuit de project directory" -ForegroundColor Yellow
+        pause
+        exit 1
+    }
 }
 
 # Stap 3: Test Apache configuratie
