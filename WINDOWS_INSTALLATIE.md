@@ -56,6 +56,26 @@ Het script zal automatisch het volgende installeren:
 
 ## Na de Installatie
 
+### 0. Test de installatie (AANBEVOLEN)
+
+Run het health check script om te verifiëren dat alles correct geïnstalleerd is:
+
+```powershell
+cd C:\Users\P99900086\source\repos\ExamenXampDocker
+.\xampp-health-check.ps1
+```
+
+Dit script controleert:
+- ✅ XAMPP installatie en directories
+- ✅ PHP versie en configuratie
+- ✅ Apache service status
+- ✅ PHP extensies (mbstring, intl, curl, etc.)
+- ✅ SQL Server drivers (sqlsrv, pdo_sqlsrv)
+- ✅ Xdebug installatie
+- ✅ Composer installatie
+- ✅ Project setup
+- ✅ Web server response
+
 ### 1. Start XAMPP
 
 1. Open XAMPP Control Panel: `C:\xampp\xampp-control.exe`
@@ -380,6 +400,9 @@ $env:Path += ";C:\ProgramData\ComposerSetup\bin"
 ## Nuttige Commands
 
 ```powershell
+# Health check - test volledige installatie
+.\xampp-health-check.ps1
+
 # Check PHP versie en extensies
 php -v
 php -m
