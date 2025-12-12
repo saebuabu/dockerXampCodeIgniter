@@ -41,6 +41,31 @@ if ((Test-Path "$ProjectRoot\app") -and (Test-Path "$ProjectRoot\public")) {
             exit 1
         }
 
+        # Installeer Composer dependencies
+        Write-Host "`n  Installeren Composer dependencies..." -ForegroundColor Yellow
+        $ComposerCmd = Get-Command composer -ErrorAction SilentlyContinue
+        if ($ComposerCmd) {
+            try {
+                Push-Location $HtdocsPath
+                Write-Host "  Uitvoeren: composer install..." -ForegroundColor Gray
+                & composer install --no-dev --optimize-autoloader
+                Pop-Location
+
+                if (Test-Path "$HtdocsPath\vendor\codeigniter4\framework") {
+                    Write-Host "  [OK] Dependencies geinstalleerd" -ForegroundColor Green
+                } else {
+                    Write-Host "  [WARN] Vendor directory niet compleet" -ForegroundColor Yellow
+                }
+            } catch {
+                Pop-Location
+                Write-Host "  [WARN] Composer install mislukt: $_" -ForegroundColor Yellow
+                Write-Host "  Je moet handmatig 'composer install' uitvoeren in: $HtdocsPath" -ForegroundColor Yellow
+            }
+        } else {
+            Write-Host "  [WARN] Composer niet gevonden" -ForegroundColor Yellow
+            Write-Host "  Installeer Composer en voer uit: composer install in $HtdocsPath" -ForegroundColor Yellow
+        }
+
     } catch {
         Write-Host "  [FAIL] Kopieren mislukt: $_" -ForegroundColor Red
         exit 1

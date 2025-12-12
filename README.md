@@ -1,5 +1,60 @@
 # CodeIgniter 4 Application Starter
 
+## Snelle Setup voor VM (Windows + XAMPP)
+
+### Vereisten
+1. XAMPP geïnstalleerd (Apache + PHP + MySQL)
+2. Composer geïnstalleerd ([Download hier](https://getcomposer.org/download/))
+3. PowerShell met execution policy ingesteld (zie hieronder)
+
+### PowerShell Execution Policy instellen
+Open PowerShell als Administrator:
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### Installatie Stappen
+
+**Optie 1: Automatisch (Aanbevolen)**
+1. Clone dit project naar je lokale machine
+2. Run het installatie script als Administrator:
+   ```powershell
+   .\fix-apache-config.ps1
+   ```
+3. Start Apache via XAMPP Control Panel
+4. Open browser: `http://localhost/Examen/`
+
+**Optie 2: Handmatig**
+1. Clone of kopieer project naar `C:\xampp\htdocs\Examen`
+2. Installeer dependencies:
+   ```bash
+   cd C:\xampp\htdocs\Examen
+   composer install
+   ```
+3. Start Apache via XAMPP Control Panel
+4. Open browser: `http://localhost/Examen/`
+
+### Troubleshooting
+
+**Probleem: "Failed to open stream: No such file or directory" (vendor/codeigniter4/framework/system/Boot.php)**
+
+De Composer dependencies zijn niet geïnstalleerd. Los dit op met:
+```powershell
+.\install-dependencies.ps1
+```
+
+Of handmatig:
+```bash
+cd C:\xampp\htdocs\Examen
+composer install
+```
+
+**Probleem: Apache start niet**
+
+Controleer of poort 80 en 443 beschikbaar zijn. Stop eventuele andere webservers (IIS, andere Apache instanties).
+
+---
+
 ## What is CodeIgniter?
 
 CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
