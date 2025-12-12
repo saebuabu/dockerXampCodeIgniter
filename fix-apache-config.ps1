@@ -27,8 +27,8 @@ if ((Test-Path "$ProjectRoot\app") -and (Test-Path "$ProjectRoot\public")) {
         Copy-Item -Path $ProjectRoot -Destination "C:\xampp\htdocs\" -Recurse -Force
 
         # Hernoem als nodig
-        if (Test-Path "C:\xampp\htdocs\ExamenXampDocker") {
-            Rename-Item "C:\xampp\htdocs\ExamenXampDocker" "Examen"
+        if (Test-Path "C:\xampp\htdocs\dockerXampCodeIgniter") {
+            Rename-Item "C:\xampp\htdocs\dockerXampCodeIgniter" "Examen"
         }
 
         Write-Host "  [OK] Project gekopieerd naar: $HtdocsPath" -ForegroundColor Green
