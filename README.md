@@ -53,6 +53,30 @@ composer install
 
 Controleer of poort 80 en 443 beschikbaar zijn. Stop eventuele andere webservers (IIS, andere Apache instanties).
 
+**Probleem: SQL Server drivers niet geladen of DLL's niet gevonden**
+
+Als je met Microsoft SQL Server werkt en de drivers zijn niet correct geladen:
+```powershell
+.\fix-sqlsrv-drivers.ps1
+```
+
+Dit script zal:
+- Detecteren welke PHP versie je hebt
+- Controleren of de drivers al geladen zijn
+- Instructies geven voor het downloaden van de juiste drivers
+- Verifiëren of Visual C++ Redistributable geïnstalleerd is
+
+Handmatige installatie:
+1. Download Microsoft Drivers voor PHP voor SQL Server van [Microsoft](https://learn.microsoft.com/en-us/sql/connect/php/download-drivers-php-sql-server)
+2. Pak het ZIP bestand uit en kopieer de juiste DLL's naar `C:\xampp\php\ext`
+3. Voeg toe aan `php.ini`:
+   ```ini
+   extension=sqlsrv
+   extension=pdo_sqlsrv
+   ```
+4. Installeer [Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+5. Herstart Apache
+
 ---
 
 ## What is CodeIgniter?

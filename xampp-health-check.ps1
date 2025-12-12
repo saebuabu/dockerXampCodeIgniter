@@ -149,58 +149,79 @@ foreach ($ext in $RequiredExtensions) {
     }
 }
 
-# 7. SQL Server Drivers
+# 7. SQL Server Drivers (Voor MS SQL Database)
 Write-Host "`n[7/10] SQL Server Drivers..." -ForegroundColor Yellow
-if ($Extensions -match "sqlsrv") {
+$SqlsrvLoaded = $Extensions -match "sqlsrv"
+$PdoSqlsrvLoaded = $Extensions -match "pdo_sqlsrv"
+
+if ($SqlsrvLoaded) {
     Write-Host "  [OK] sqlsrv extensie geladen" -ForegroundColor Green
 } else {
     Write-Host "  [WARN] sqlsrv niet geladen" -ForegroundColor Yellow
-    Write-Host "  Controleer: C:\xampp\php\ext\php_sqlsrv.dll" -ForegroundColor Gray
 }
 
-if ($Extensions -match "pdo_sqlsrv") {
+if ($PdoSqlsrvLoaded) {
     Write-Host "  [OK] pdo_sqlsrv extensie geladen" -ForegroundColor Green
 } else {
     Write-Host "  [WARN] pdo_sqlsrv niet geladen" -ForegroundColor Yellow
-    Write-Host "  Controleer: C:\xampp\php\ext\php_pdo_sqlsrv.dll" -ForegroundColor Gray
 }
 
-# Check DLL files
-$SqlsrvDll = "C:\xampp\php\ext\php_sqlsrv.dll"
-$PdoSqlsrvDll = "C:\xampp\php\ext\php_pdo_sqlsrv.dll"
-
-if (Test-Path $SqlsrvDll) {
-    Write-Host "  [OK] php_sqlsrv.dll gevonden" -ForegroundColor Green
+# Als extensies geladen zijn, is de DLL locatie niet zo belangrijk
+if ($SqlsrvLoaded -and $PdoSqlsrvLoaded) {
+    Write-Host "  [OK] SQL Server drivers zijn functioneel" -ForegroundColor Green
+    Write-Host "  [INFO] DLL's zijn geladen (mogelijk via Microsoft installer)" -ForegroundColor Gray
+} elseif ($SqlsrvLoaded -or $PdoSqlsrvLoaded) {
+    Write-Host "  [WARN] Slechts één driver geladen - controleer configuratie" -ForegroundColor Yellow
+    Write-Host "  Run: .\fix-sqlsrv-drivers.ps1 voor diagnose" -ForegroundColor Gray
 } else {
-    Write-Host "  [FAIL] php_sqlsrv.dll niet gevonden" -ForegroundColor Red
+    # Check of DLL files bestaan
+    $SqlsrvDll = "C:\xampp\php\ext\php_sqlsrv.dll"
+    $PdoSqlsrvDll = "C:\xampp\php\ext\php_pdo_sqlsrv.dll"
+
+    $DllsFound = $false
+    if (Test-Path $SqlsrvDll) {
+        Write-Host "  [INFO] php_sqlsrv.dll gevonden (niet geladen)" -ForegroundColor Gray
+        $DllsFound = $true
+    }
+    if (Test-Path $PdoSqlsrvDll) {
+        Write-Host "  [INFO] php_pdo_sqlsrv.dll gevonden (niet geladen)" -ForegroundColor Gray
+        $DllsFound = $true
+    }
+
+    if ($DllsFound) {
+        Write-Host "  [WARN] Drivers geïnstalleerd maar niet geladen in php.ini" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [WARN] SQL Server drivers niet geïnstalleerd" -ForegroundColor Yellow
+    }
+    Write-Host "  Run: .\fix-sqlsrv-drivers.ps1 voor installatie instructies" -ForegroundColor Gray
 }
 
-if (Test-Path $PdoSqlsrvDll) {
-    Write-Host "  [OK] php_pdo_sqlsrv.dll gevonden" -ForegroundColor Green
-} else {
-    Write-Host "  [FAIL] php_pdo_sqlsrv.dll niet gevonden" -ForegroundColor Red
-}
-
-# 8. Xdebug
+# 8. Xdebug (Voor Development Debugging)
 Write-Host "`n[8/10] Xdebug..." -ForegroundColor Yellow
-if ($Extensions -match "xdebug") {
+$XdebugLoaded = $Extensions -match "xdebug"
+
+if ($XdebugLoaded) {
     Write-Host "  [OK] Xdebug extensie geladen" -ForegroundColor Green
 
-    # Check Xdebug versie
-    $XdebugInfo = & $PhpExe -v 2>&1 | Select-String "Xdebug"
+    # Check Xdebug versie (negeer warnings)
+    $XdebugInfo = & $PhpExe -v 2>&1 | Where-Object { $_ -match "Xdebug" -and $_ -notmatch "Warning" -and $_ -notmatch "Failed loading" }
     if ($XdebugInfo) {
-        Write-Host "  [OK] $XdebugInfo" -ForegroundColor Green
+        Write-Host "  [OK] $($XdebugInfo | Select-Object -First 1)" -ForegroundColor Green
     }
-} else {
-    Write-Host "  [WARN] Xdebug niet geladen" -ForegroundColor Yellow
-    Write-Host "  Debugging in VS Code zal niet werken" -ForegroundColor Gray
-}
 
-$XdebugDll = "C:\xampp\php\ext\php_xdebug.dll"
-if (Test-Path $XdebugDll) {
-    Write-Host "  [OK] php_xdebug.dll gevonden" -ForegroundColor Green
+    Write-Host "  [OK] Xdebug is functioneel voor debugging" -ForegroundColor Green
 } else {
-    Write-Host "  [FAIL] php_xdebug.dll niet gevonden" -ForegroundColor Red
+    Write-Host "  [INFO] Xdebug niet geladen (optioneel voor development)" -ForegroundColor Gray
+    Write-Host "  [INFO] Zonder Xdebug werkt step-debugging in IDE niet" -ForegroundColor Gray
+
+    # Check of DLL bestaat
+    $XdebugDll = "C:\xampp\php\ext\php_xdebug.dll"
+    if (Test-Path $XdebugDll) {
+        Write-Host "  [INFO] php_xdebug.dll gevonden (niet geladen in php.ini)" -ForegroundColor Gray
+    } else {
+        Write-Host "  [INFO] php_xdebug.dll niet geïnstalleerd" -ForegroundColor Gray
+        Write-Host "  Download: https://xdebug.org/download" -ForegroundColor Gray
+    }
 }
 
 # 9. Composer Check
